@@ -1,0 +1,27 @@
+Please note that this code was written early in my PhD and I’ve not had time to properly go back and redesign it. There are many points where there are definitely better coding approaches (e.g. using xarray, and parts of find_water_year_start_twoseasons could really do with rewriting). One day I hope to have time to completely rewrite it from scratch, but that time hasn’t yet appeared!
+
+I also haven’t yet written any proper documentation, so I will describe what each bit does here and hopefully it will make sense, and you can contact me with questions and clarifications! Sorry that the code is slightly messy - at some point I intend to tidy it up and write documentation and put it on github but that hasn’t yet happened!
+
+The methodology is described fully in my 2016 paper (https://agupubs.onlinelibrary.wiley.com/doi/full/10.1002/2016JD025428<https://agupubs.onlinelibrary.wiley.com/doi/full/10.1002/2016JD025428>) and a paper by Liebmann (https://journals.ametsoc.org/doi/pdf/10.1175/JCLI-D-11-00157.1<https://journals.ametsoc.org/doi/pdf/10.1175/JCLI-D-11-00157.1>). Please refer back to these if the method doesn’t make sense.
+
+I have attached all the code that I use to calculate the onset/cessation dates for TAMSATv3. This can easily be adapted for any data that you want to read in. I have recently used the same code to look at the CMIP models - hence there are lots of references to the CMIP models! I think I have done some more updates when I used the CP4 data that haven’t made it to this version. It is written to work in Python2.7.
+
+Code attached:
+
+1) open_tamsatv3.py. This file simply loads in the data from a netCDF file, with dimensions time, lat, lon. The code will only work if leap days (29th Feb) have been removed from the data. This was already the case for the TAMSAT data that I used. A land sea mask is also required.
+
+2) standard_deviation.py. If the standard deviation was less than 1mm/day then that grid point was deemed too dry and not used. This code works out the standard deviation at each grid point to determine points that are too dry. The standard deviation is saved as a numpy array which is then imported later on.
+
+3) fourier_maps_daily.py. This works out the harmonic ratio at each grid point to determine if it has one or two wet seasons per year. It uses fourier_analysis1.py. You may need to change "sens1,sens2,sens3 = 0.02,0.02,0.02". The idea is that these values are as small as possible (capturing the peaks at frequencies of 1/2/3 cycles per year) and I have found that 0.02 works well but you may need to adapt this! If you are getting NaNs when the plot is produced increase the value slightly. Also, the fourier decomposition works best if the array used is a length of a power of 2 long. In the fourier_analysis function you can set the length used (second argument) - I would suggest using a power of two here rather than the length of the precipitation timeseries. If it is shorter then it will just truncate the timeseries, if longer then it will apply zero padding. For 20-30 year timeseries I used 8192 (2^13) here. The fourier mask is saved as a numpy file.
+
+4) onset_end_files.py. This is the script that actually works out the onset and cessation dates and shouldn't require too much modification. It imports the data and numpy arrays and works out the onset and cessation dates. For some points and years it will give NaNs - if it can't find a season then it will give a NaN rather than an erroneous value!
+
+This function also uses functions from 'find_water_year_or_season.py' and 'find_wet_seasons.py'. It then outputs the data as a netCDF file using 'save_netcdf_file.py'.
+
+Let me know if you have any questions (or if I’ve failed to explain anything/attach a file!).
+
+This paper by Bombardi: https://journals.ametsoc.org/doi/10.1175/BAMS-D-18-0177.1<https://journals.ametsoc.org/doi/10.1175/BAMS-D-18-0177.1> uses a slight variant on the method. Their code is all on github (so it’s more polished than mine!, see the link at the end of the paper) but they haven’t considered regions with two wet seasons per year, so maybe less useful for East Africa.
+
+If you do use this code for any published work, please acknowledge my contribution.
+
+Contact: c.wainwright@reading.ac.uk
