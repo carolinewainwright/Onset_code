@@ -11,11 +11,11 @@ import math
 import matplotlib.pyplot as plt
 
 # UNIMODAL
-def find_water_year_start(timeseries,year_length):
+def find_water_year_start(timeseries_input,year_length):
     """
     This function finds the start and end of the climatological water year
     Based on the method of Liebmann et al. (2012) Journal of Climate
-    The new method is fully described in Dunning et al (submitted)
+    The new method is fully described in Dunning et al (2016)
     It uses the numpy library
     'timeseries' should be one dimensional and be a multiple of 'year_length' long
     Leap days should have already been removed
@@ -23,6 +23,11 @@ def find_water_year_start(timeseries,year_length):
     This function only works if there are no nans in the data
     If there are nans in the data then it will raise a ValueError
     """
+
+    # Cap timeseries
+    timeseries = timeseries_input.copy()
+    #timeseries[np.where(timeseries>30.0)] = 30.0
+    #print np.nanmax(timeseries)
 
     # Check it is a multiple of year_length long
     length = len(timeseries)
@@ -97,7 +102,7 @@ def is_it_max(listt, index):
 
 
 
-def find_water_year_start_twoseasons(times,year_length):
+def find_water_year_start_twoseasons(times_input,year_length):
     """
     This function finds the start and end of the water year
     The method used is decribed in Dunning et al. (submitted)
@@ -112,6 +117,10 @@ def find_water_year_start_twoseasons(times,year_length):
     It does not work if there are NaNs in the data
     If the method fails to identify two seasons than NaNs will be returned for the second start/end
     """
+
+    # Cap timeseries
+    times = times_input.copy()
+    #times[np.where(times>30.0)] = 30.0
 
     # Check it is a multiple of year_length long
     length = len(times)
@@ -203,12 +212,12 @@ def find_water_year_start_twoseasons(times,year_length):
         # The longer version is kept and the next is tried
         # If they all have the same end then NaNs are returned
         iterr = 0
-        while int(end22)==int(end11) and iterr<len(lengths)-2:
+        while (int(end22)==int(end11) or int(end22)==int(end11)+year_length or int(end22)+year_length==int(end11)) and iterr<len(lengths)-2:
             tlongest = np.argsort(lengths)[-3-iterr]
             start22 = dates[pairs[tlongest][0]]
             end22 = dates[pairs[tlongest][1]]
             iterr+=1
-        if int(end22)==int(end11) and iterr == len(lengths)-2:
+        if (int(end22)==int(end11) or int(end22)==int(end11)+year_length or int(end22)+year_length==int(end11)) and iterr == len(lengths)-2:
             start22 = float('nan')
             end22 = float('nan')
 
@@ -269,7 +278,22 @@ def find_water_year_start_twoseasons(times,year_length):
     if start22>end22:
         end22 = end22+year_length
 
+    # Check one season is not the same as previous  (+_ year_length)
+    # It should not be due to the method used, but just to check. 
+    if np.abs(start22-start11)<year_length+3 and np.abs(start22-start11)>year_length-3:
 
+        #season 2 is season 1+- year_length
+        print 'year_length different: ',start22,start11
+        if start11<year_length:
+            start22=np.nan
+            end22=np.nan
+        else: 
+            start11=start22
+            end11 = end22
+            start22=np.nan
+            end22=np.nan
+
+    # Return
     return start11,end11,start22,end22
 
 
