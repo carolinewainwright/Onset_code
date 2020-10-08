@@ -1,18 +1,17 @@
-# This code creates onset and cessation files for the CMIP runs
+# This code creates onset and cessation files for TAMSAT data
 # It opens the fourier and standard deviation masks that are already saved elsewhere
 # The result is saved as a netcdf file with onset and end of unimodal and bimodal seasons
-# The method used is the same of that in Dunning et al. (submitted)
+# The method used is the same of that in Dunning et al. (2016)
 # The method uses the fourier mask to determine where is unimodal and where is bimodal
 # Fourier masks have been computed using the fourier_maps_daily code ad are imported as .npy files
 # The find_water_year and find_wet_season codes are also imported from elsewhere
+# leap days should have been removed!!!
 
 
 # Import the necessary libraries and functions
 import numpy as np
 import math
 
-from open_all_cmip_files_future import open_correct_model_run_cmip_future                  # To open cmip data
-from open_all_cmip_files_future import open_correct_model_run_cmip_historical                  # To open cmip data
 from save_netcdf_file import save_onset_cessation_netcdf_cmip                         # To save results
 import sys
 
@@ -22,17 +21,11 @@ from find_water_year_or_season import find_water_year_start                     
 from find_water_year_or_season import find_water_year_start_twoseasons           # To run onset code
 from find_wet_seasons import find_onset_and_cessation                            #
 
-
-                                                                       #
-#sys.path.append('/home/vr031288/onset/code')                                     # To import the GPCP data
-#from create_land_sea_gpcp import create_land_sea_mask_gpcp                       # to test the code
-#from open_data_functions import open_gpcp_1dd_all                                #
-
 from open_tamsatv3 import open_tamsatv3_func 
 
 # Find the onset etc.
 
-def find_onset_and_cessation_cmip(model_number,rcp,years):
+def find_onset_and_cessation():
     """
     This function finds the onset and cessation for the amip data
     Data is assumed to be of the format time, lat, lon
@@ -43,38 +36,15 @@ def find_onset_and_cessation_cmip(model_number,rcp,years):
     # Open data, land sea mask, fourier mask and std dev mask
     print 'Started calculating onset etc.'
     print 'Loading data...'
-    #if rcp=='historical':
-    #    initial_data, lat, lon, model_name, land_sea_mask = open_correct_model_run_cmip_historical(model_number,  1.0)#False)
-    #else:
-    #    initial_data, lat, lon, model_name, land_sea_mask = open_correct_model_run_cmip_future(model_number, rcp,years, 1.0)#False)#1.0)#
-    #std_dev_mask = np.load('/net/glusterfs_essc/scenario/users/vr031288/Onset/CMIP_Future/StdDev_files/stddev_mask_for_'+model_name+'_'+rcp+'_'+years+'.npy')
-    #fourier_mask = np.load('/net/glusterfs_essc/scenario/users/vr031288/Onset/CMIP_Future/Fourier_files/fourier_mask_for_'+model_name+'_'+rcp+'_'+years+'.npy')
-    #year_length = 365
-
-
     initial_data, lat, lon,land_sea_mask, start_date_tamsat= open_tamsatv3_func()
     model_name = 'TAMSATv3'
     std_dev_mask = np.load('/glusterfs/scenario/users/vr031288/Onset/CMIP_Future/StdDev_files/stddev_mask_for_'+model_name+'.npy')
     fourier_mask = np.load('/glusterfs/scenario/users/vr031288/Onset/CMIP_Future/Fourier_files/fourier_mask_for_'+model_name+'.npy')
-    year_length = 365
+    year_length = 365 # Some models have 360 day years
 
-    print model_name
-
-    if model_name=='HadGEM2-CC' or model_name=='HadGEM2-ES' or model_name=='HadCM3' or model_name=='HadGEM2-CC_ReGrid2' or model_name=='HadGEM2-ES_ReGrid2' or model_name=='HadCM3_ReGrid2' or model_name=='HadGEM2-CC_ReGrid1' or model_name=='HadGEM2-ES_ReGrid1' or model_name=='HadCM3_ReGrid1' :
-        year_length = 360
-
-    print 'Data loaded for '+model_name
+    print 'Data loaded'
     print initial_data.shape[0]/float(year_length)
 
-    # This scetion imports the GPCP data to test the code 
-    #initial_data, startyear,lon, lat =   open_gpcp_1dd_all()
-    #land_sea_mask = create_land_sea_mask_gpcp()
-    #land_sea_mask[np.where(land_sea_mask==0)] = 100.0
-    #fourier_mask = np.load('/net/glusterfs_essc/scenario/users/vr031288/Onset/fourier_mask_for_GPCP_1DD.npy')
-    #std_dev_mask = np.load('/net/glusterfs_essc/scenario/users/vr031288/Onset/AMIP/StdDev_files/stddev_mask_for_GPCP_1DD.npy')
-    #model_name = 'GPCP_1DD'
-    #year_length = 365
-    #print 'Data loaded for '+model_name
 
 
     # Find the dimensions and set up storage arrays
@@ -232,16 +202,4 @@ def find_onset_and_cessation_cmip(model_number,rcp,years):
     save_onset_cessation_netcdf_cmip(model_name, lat, lon, start_date_tamsat, storage_onset, storage_cessation, storage_length, storage_onset_lo, storage_cessation_lo,storage_length_lo,storage_onset_sh,storage_cessation_sh, storage_length_sh)
 
 if __name__=='__main__':
-    """
-    for i in np.arange(30): #1,7):#28
-        if i ==3:
-            continue
-        for rcp in ['rcp45','rcp85']:
-            for years in ['2030-2049' ,'2080-2099']:
-                find_onset_and_cessation_cmip(i,rcp,years)
-
-        rcp, years = 'historical', '1980-1999'
-        find_onset_and_cessation_cmip(i,rcp,years)
-    """
-
-    find_onset_and_cessation_cmip(None,None,None)
+    find_onset_and_cessation()
