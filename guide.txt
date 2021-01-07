@@ -29,7 +29,7 @@ This function also uses functions from 'find_water_year_or_season.py' and 'find_
 The lines to be changed here are lines 35, 36, 39. 
 
 Let me know if you have any questions (or if I’ve failed to explain anything/attach a file!).
-There are test files available - all of the plots are uploaded for these. Still trying to work out how to upload the rainfall data!
+There are test files available - all of the plots are uploaded for these. Test data can be found here: https://drive.google.com/file/d/1Vwk0UIEcs15mrYMgYMesyecQb_3OZ-oU/view?usp=sharing
 
 This paper by Bombardi: https://journals.ametsoc.org/doi/10.1175/BAMS-D-18-0177.1<https://journals.ametsoc.org/doi/10.1175/BAMS-D-18-0177.1> uses a slight variant on the method. Their code is all on github (so it’s more polished than mine!, see the link at the end of the paper) but they haven’t considered regions with two wet seasons per year, so maybe less useful for East Africa.
 
