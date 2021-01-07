@@ -1,8 +1,8 @@
 # This code creates onset and cessation files for TAMSAT data
 # It opens the fourier and standard deviation masks that are already saved elsewhere
-# The result is saved as a netcdf file with onset and end of unimodal and bimodal seasons
+# The result is saved as a netcdf file with onset and end of annual and biannual seasons
 # The method used is the same of that in Dunning et al. (2016)
-# The method uses the fourier mask to determine where is unimodal and where is bimodal
+# The method uses the fourier mask to determine where is annual and where is biannual
 # Fourier masks have been computed using the fourier_maps_daily code ad are imported as .npy files
 # The find_water_year and find_wet_season codes are also imported from elsewhere
 # leap days should have been removed!!!
@@ -12,8 +12,7 @@
 import numpy as np
 import math
 
-from save_netcdf_file import save_onset_cessation_netcdf_cmip                         # To save results
-import sys
+from save_netcdf_file import save_onset_cessation_netcdf                         # To save results
 
 
 #sys.path.append('/home/vr031288/onset/amip_code')
@@ -21,31 +20,26 @@ from find_water_year_or_season import find_water_year_start                     
 from find_water_year_or_season import find_water_year_start_twoseasons           # To run onset code
 from find_wet_seasons import find_onset_and_cessation                            #
 
-from open_tamsatv3 import open_tamsatv3_func 
+from open_rainfall_data import open_tamsatv3_func
 
-# Find the onset etc.
 
-def find_onset_and_cessation():
+def calculate_onset_and_cessation():
     """
-    This function finds the onset and cessation for the amip data
+    This function finds the onset and cessation
     Data is assumed to be of the format time, lat, lon
-    the argument: model_number, rcp and years determines which model is used 
     """
 
-    
     # Open data, land sea mask, fourier mask and std dev mask
     print 'Started calculating onset etc.'
     print 'Loading data...'
-    initial_data, lat, lon,land_sea_mask, start_date_tamsat= open_tamsatv3_func()
-    model_name = 'TAMSATv3'
-    std_dev_mask = np.load('/glusterfs/scenario/users/vr031288/Onset/CMIP_Future/StdDev_files/stddev_mask_for_'+model_name+'.npy')
-    fourier_mask = np.load('/glusterfs/scenario/users/vr031288/Onset/CMIP_Future/Fourier_files/fourier_mask_for_'+model_name+'.npy')
+    initial_data, lat, lon, land_sea_mask, start_date_tamsat= open_tamsatv3_func()
+    data_name = 'TAMSATv3'
+    std_dev_mask = np.load('standard_deviation_mask_for_'+data_name+'.npy')
+    fourier_mask = np.load('fourier_mask_for_'+data_name+'.npy')
     year_length = 365 # Some models have 360 day years
 
     print 'Data loaded'
     print initial_data.shape[0]/float(year_length)
-
-
 
     # Find the dimensions and set up storage arrays
     data       = initial_data.copy()
@@ -71,16 +65,16 @@ def find_onset_and_cessation():
         for j in np.arange(dimensions[2]):
 
             # Mask out the sea and where std dev < 1.0 mm/day
-            if land_sea_mask[i,j]<10 or std_dev_mask[i,j]<1.0:
-                storage_onset[:,i,j] = float('nan')
-                storage_cessation[:,i,j] = float('nan')
-                storage_length[:,i,j] = float('nan')
-                storage_onset_lo[:,i,j] = float('nan')
-                storage_cessation_lo[:,i,j] = float('nan')
-                storage_length_lo[:,i,j] = float('nan')
-                storage_onset_sh[:,i,j] = float('nan')
-                storage_cessation_sh[:,i,j] = float('nan')
-                storage_length_sh[:,i,j] = float('nan')
+            if land_sea_mask[i,j]<50.0 or std_dev_mask[i,j]<1.0:
+                storage_onset[:,i,j]        = np.nan
+                storage_cessation[:,i,j]    = np.nan
+                storage_length[:,i,j]       = np.nan
+                storage_onset_lo[:,i,j]     = np.nan
+                storage_cessation_lo[:,i,j] = np.nan
+                storage_length_lo[:,i,j]    = np.nan
+                storage_onset_sh[:,i,j]     = np.nan
+                storage_cessation_sh[:,i,j] = np.nan
+                storage_length_sh[:,i,j]    = np.nan
                 continue
 
             # Extract timeseries
@@ -94,17 +88,17 @@ def find_onset_and_cessation():
 
                 # Find the onset and cessation
                 onsets,cessations = find_onset_and_cessation(timeseries, start, end,50,50,year_length)
-                storage_onset[:,i,j] = onsets
-                storage_cessation[:,i,j] = cessations
-                storage_length[:,i,j] = cessations - onsets
+                storage_onset[:,i,j]        = onsets
+                storage_cessation[:,i,j]    = cessations
+                storage_length[:,i,j]       = cessations - onsets
 
                 # Set two to nan
-                storage_onset_lo[:,i,j] = float('nan')
-                storage_onset_sh[:,i,j] = float('nan')
-                storage_cessation_lo[:,i,j] = float('nan')
-                storage_cessation_sh[:,i,j] = float('nan')
-                storage_length_lo[:,i,j] = float('nan')
-                storage_length_sh[:,i,j] = float('nan')
+                storage_onset_lo[:,i,j]     = np.nan
+                storage_onset_sh[:,i,j]     = np.nan
+                storage_cessation_lo[:,i,j] = np.nan
+                storage_cessation_sh[:,i,j] = np.nan
+                storage_length_lo[:,i,j]    = np.nan
+                storage_length_sh[:,i,j]    = np.nan
 
 
             # BIMODAL
@@ -117,32 +111,32 @@ def find_onset_and_cessation():
                     (start,end) = find_water_year_start(timeseries)
                     # Find the onset and cessation
                     onsets,cessations = find_onset_and_cessation(timeseries, start, end,50,50,year_length)
-                    storage_onset[:,i,j] = onsets
-                    storage_cessation[:,i,j] = cessations
-                    storage_length[:,i,j] = cessations - onsets
+                    storage_onset[:,i,j]        = onsets
+                    storage_cessation[:,i,j]    = cessations
+                    storage_length[:,i,j]       = cessations - onsets
 
                     # Set two to nan
-                    storage_onset_lo[:,i,j] = float('nan')
-                    storage_onset_sh[:,i,j] = float('nan')
-                    storage_cessation_lo[:,i,j] = float('nan')
-                    storage_cessation_sh[:,i,j] = float('nan')
-                    storage_length_lo[:,i,j] = float('nan')
-                    storage_length_sh[:,i,j] = float('nan')
+                    storage_onset_lo[:,i,j]     = np.nan
+                    storage_onset_sh[:,i,j]     = np.nan
+                    storage_cessation_lo[:,i,j] = np.nan
+                    storage_cessation_sh[:,i,j] = np.nan
+                    storage_length_lo[:,i,j]    = np.nan
+                    storage_length_sh[:,i,j]    = np.nan
 
                 # It it has only managed to find one season
                 elif math.isnan(start2):
                     onsets,cessations= find_onset_and_cessation(timeseries, start1, end1,50,50,year_length)
-                    storage_onset[:,i,j] = onsets
-                    storage_cessation[:,i,j] = cessations
-                    storage_length[:,i,j] = cessations - onsets
+                    storage_onset[:,i,j]        = onsets
+                    storage_cessation[:,i,j]    = cessations
+                    storage_length[:,i,j]       = cessations - onsets
 
                     # Set two to nan
-                    storage_onset_lo[:,i,j] = float('nan')
-                    storage_onset_sh[:,i,j] = float('nan')
-                    storage_cessation_lo[:,i,j] = float('nan')
-                    storage_cessation_sh[:,i,j] = float('nan')
-                    storage_length_lo[:,i,j] = float('nan')
-                    storage_length_sh[:,i,j] = float('nan')
+                    storage_onset_lo[:,i,j]     = np.nan
+                    storage_onset_sh[:,i,j]     = np.nan
+                    storage_cessation_lo[:,i,j] = np.nan
+                    storage_cessation_sh[:,i,j] = np.nan
+                    storage_length_lo[:,i,j]    = np.nan
+                    storage_length_sh[:,i,j]    = np.nan
 
                 # If both start1 and start2 are not nans then it has found 2 seasons!
                 else:
@@ -187,19 +181,16 @@ def find_onset_and_cessation():
 
  
                     # Set one to nan
-                    storage_onset[:,i,j] = float('nan')
-                    storage_cessation[:,i,j] = float('nan')
-                    storage_length[:,i,j] = float('nan')
-
-
-
-
-
+                    storage_onset[:,i,j]        = np.nan
+                    storage_cessation[:,i,j]    = np.nan
+                    storage_length[:,i,j]       = np.nan
 
 
     # Save the arrays
-    #save_onset_cessation_netcdf_cmip(model_name+'_'+rcp+'_'+years, lat, lon, int(years[0:4]), storage_onset, storage_cessation, storage_length, storage_onset_lo, storage_cessation_lo,storage_length_lo,storage_onset_sh,storage_cessation_sh, storage_length_sh)
-    save_onset_cessation_netcdf_cmip(model_name, lat, lon, start_date_tamsat, storage_onset, storage_cessation, storage_length, storage_onset_lo, storage_cessation_lo,storage_length_lo,storage_onset_sh,storage_cessation_sh, storage_length_sh)
+    save_onset_cessation_netcdf(data_name, lat, lon, start_date_tamsat, 
+                                storage_onset, storage_cessation, storage_length, 
+                                storage_onset_lo, storage_cessation_lo,storage_length_lo,
+                                storage_onset_sh,storage_cessation_sh, storage_length_sh)
 
 if __name__=='__main__':
-    find_onset_and_cessation()
+    calculate_onset_and_cessation()
